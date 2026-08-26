@@ -202,10 +202,6 @@ func (d *DB) DispatchPlanAtomic(ctx context.Context, plan dispatch.Plan, expecte
 	})
 }
 func (d *DB) JobsByPlan(ctx context.Context, planID string) ([]dispatch.Job, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	rows, err := d.sql.QueryContext(ctx, `SELECT id,plan_id,cluster_id,status,attempts,max_attempts,next_attempt_at,lease_owner,lease_until,last_error,command_key,version,created_at,updated_at FROM execution_jobs WHERE plan_id=? ORDER BY cluster_id`, planID)
 	if err != nil {
 		return nil, translate("sqlite.JobsByPlan", err)

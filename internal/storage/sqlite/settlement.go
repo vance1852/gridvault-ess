@@ -55,10 +55,6 @@ func (d *DB) CompletedPlansForPeriod(ctx context.Context, period settlement.Peri
 }
 
 func (d *DB) ActualEnergyForPlan(ctx context.Context, planID string) (int64, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	var total sql.NullInt64
 	err := d.sql.QueryRowContext(ctx, `SELECT SUM(t.energy_delta_wh) FROM telemetry_snapshots t JOIN battery_clusters c ON c.id=t.cluster_id JOIN capacity_reservations r ON r.cluster_id=c.id WHERE r.plan_id=? AND t.observed_at>=r.starts_at AND t.observed_at<r.ends_at`, planID).Scan(&total)
 	if err != nil {

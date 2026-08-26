@@ -14,10 +14,6 @@ func (d *DB) InsertIdempotency(ctx context.Context, record idempotency.Record) e
 }
 
 func (d *DB) IdempotencyByScope(ctx context.Context, actorID, method, path, key string) (idempotency.Record, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	var record idempotency.Record
 	var status sql.NullInt64
 	var body []byte

@@ -13,10 +13,6 @@ func (d *DB) InsertUser(ctx context.Context, user identity.User) error {
 	return translate("sqlite.InsertUser", err)
 }
 func (d *DB) UserByEmail(ctx context.Context, email string) (identity.User, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	return scanUser(d.sql.QueryRowContext(ctx, `SELECT id,email,password_hash,display_name,role,active,version,created_at,updated_at FROM users WHERE email=?`, email))
 }
 func (d *DB) UserByID(ctx context.Context, id string) (identity.User, error) {

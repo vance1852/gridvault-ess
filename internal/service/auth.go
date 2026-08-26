@@ -73,6 +73,9 @@ func (s *AuthService) Bootstrap(ctx context.Context, input identity.NewUser) (id
 }
 
 func (s *AuthService) Login(ctx context.Context, input LoginInput) (LoginResult, error) {
+	if err := ctx.Err(); err != nil {
+		return LoginResult{}, fault.Wrap(fault.Unavailable, "request_cancelled", "request was cancelled", "service.Auth.Login", err)
+	}
 	email, err := identity.NormalizeEmail(input.Email)
 	if err != nil {
 		return LoginResult{}, fault.New(fault.Unauthenticated, "invalid_credentials", "email or password is incorrect")

@@ -34,6 +34,9 @@ type IdempotencyDecision struct {
 }
 
 func (s *IdempotencyService) Begin(ctx context.Context, principal Principal, method, path, key string, request []byte) (IdempotencyDecision, error) {
+	if err := ctx.Err(); err != nil {
+		return IdempotencyDecision{}, fault.Wrap(fault.Unavailable, "request_cancelled", "request was cancelled", "service.IdempotencyService.Begin", err)
+	}
 	existing, err := s.store.IdempotencyByScope(ctx, principal.User.ID, method, path, key)
 	if err == nil {
 		status, body, replayErr := existing.Replay(request, s.clock.Now())

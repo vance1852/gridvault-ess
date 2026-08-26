@@ -84,11 +84,20 @@ func PublicMessage(err error) string {
 	return "internal service error"
 }
 
+// exposeFields returns a defensive copy so callers that redact or otherwise
+// mutate the returned map (e.g. for log scrubbing in the HTTP layer) cannot
+// tamper with the fields owned by the originating error. Returning the
+// internal map directly would let a later read of the same error object leak
+// those mutations into its conflict details.
 func exposeFields(target *Error) map[string]string {
 	if target == nil || len(target.Fields) == 0 {
 		return nil
 	}
-	return target.Fields
+	copyFields := make(map[string]string, len(target.Fields))
+	for key, value := range target.Fields {
+		copyFields[key] = value
+	}
+	return copyFields
 }
 
 func Fields(err error) map[string]string {

@@ -20,10 +20,6 @@ func (d *DB) AuditInserter(ctx context.Context, e audit.Event) func(*sql.Tx) err
 	return func(tx *sql.Tx) error { return insertAudit(tx, ctx, e) }
 }
 func (d *DB) ListAudit(ctx context.Context, filter audit.Filter) (audit.Page, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	f, err := filter.Normalize()
 	if err != nil {
 		return audit.Page{}, err

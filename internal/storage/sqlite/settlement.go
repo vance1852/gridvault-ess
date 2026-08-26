@@ -9,10 +9,6 @@ import (
 )
 
 func (d *DB) PeriodByID(ctx context.Context, id string) (settlement.Period, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	var period settlement.Period
 	var start, end, status, created, updated string
 	var closedBy, closedAt sql.NullString

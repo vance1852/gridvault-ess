@@ -96,10 +96,6 @@ func (d *DB) StoreTelemetryAtomic(ctx context.Context, s telemetry.Snapshot, clu
 	})
 }
 func (d *DB) AlarmByID(ctx context.Context, id string) (alarm.Alarm, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	var a alarm.Alarm
 	var severity, status, opened, updated string
 	var ackBy, resBy, ackAt, resAt sql.NullString

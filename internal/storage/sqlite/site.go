@@ -86,10 +86,6 @@ func (d *DB) InsertCluster(ctx context.Context, c site.Cluster) error {
 	return translate("sqlite.InsertCluster", err)
 }
 func (d *DB) ClusterByID(ctx context.Context, id string) (site.Cluster, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	var c site.Cluster
 	var status, created, updated string
 	var latest sql.NullString

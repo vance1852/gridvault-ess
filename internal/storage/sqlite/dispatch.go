@@ -238,7 +238,7 @@ func scanJobRows(row rowScanner) (dispatch.Job, error) {
 func (d *DB) ClaimJobs(ctx context.Context, owner string, limit int, now time.Time, lease time.Duration) ([]dispatch.Job, error) {
 	var claimed []dispatch.Job
 	err := d.InTx(ctx, "sqlite.ClaimJobs", func(tx *sql.Tx) error {
-		rows, err := tx.QueryContext(ctx, `SELECT id,plan_id,cluster_id,status,attempts,max_attempts,next_attempt_at,lease_owner,lease_until,last_error,command_key,version,created_at,updated_at FROM execution_jobs WHERE ((status IN ('pending','retryable') AND next_attempt_at<=?) OR (status='leased' AND lease_until<=?)) ORDER BY next_attempt_at,id LIMIT ?`, encodeTime(now), encodeTime(now), limit)
+		rows, err := tx.QueryContext(ctx, `SELECT id,plan_id,cluster_id,status,attempts,max_attempts,next_attempt_at,lease_owner,lease_until,last_error,command_key,version,created_at,updated_at FROM execution_jobs WHERE ((status IN ('pending','retryable') AND next_attempt_at<=?) OR (status='leased' AND lease_until<?)) ORDER BY next_attempt_at,id LIMIT ?`, encodeTime(now), encodeTime(now), limit)
 		if err != nil {
 			return translate("sqlite.ClaimJobs", err)
 		}

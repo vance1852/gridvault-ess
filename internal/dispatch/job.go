@@ -67,7 +67,10 @@ func (j Job) Claimable(now time.Time) bool {
 	case JobPending, JobRetryable:
 		return !j.NextAttemptAt.After(now)
 	case JobLeased:
-		return j.LeaseUntil != nil && !j.LeaseUntil.After(now)
+		// Expired leases are reclaimable only strictly after lease_until; at
+		// the expiry instant the current holder still owns the lease and may
+		// be completing the command, so another worker must not preempt it.
+		return j.LeaseUntil != nil && j.LeaseUntil.Before(now)
 	default:
 		return false
 	}
@@ -99,7 +102,7 @@ func (j Job) Renew(owner string, now time.Time, duration time.Duration) (Job, er
 	if j.Status != JobLeased || j.LeaseOwner != owner || j.LeaseUntil == nil {
 		return Job{}, fault.New(fault.Conflict, "lease_not_owned", "worker does not own this job lease")
 	}
-	if !now.UTC().Before(*j.LeaseUntil) {
+	if !clock.LeaseOwnedAt(now, *j.LeaseUntil) {
 		return Job{}, fault.New(fault.Conflict, "lease_expired", "job lease already expired")
 	}
 	until := now.UTC().Add(duration)

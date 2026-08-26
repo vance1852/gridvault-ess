@@ -68,13 +68,14 @@ func (w Window) Overlaps(other Window) bool {
 	return w.Start.Before(other.End) && other.Start.Before(w.End)
 }
 
+// LeaseOwnedAt reports whether a lease is still owned by its holder at now.
+// The boundary is inclusive: a lease held "until T" is owned through T, so a
+// command completing exactly at the expiry instant is still within the lease.
+// Reclaim by another worker must therefore happen strictly after T.
 func LeaseOwnedAt(now time.Time, until time.Time) bool {
 	now = now.UTC()
 	until = until.UTC()
-	if now.Equal(until) {
-		return false
-	}
-	return now.Before(until)
+	return !now.After(until)
 }
 
 func (w Window) Duration() time.Duration { return w.End.Sub(w.Start) }

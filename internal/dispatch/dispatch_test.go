@@ -302,6 +302,40 @@ func TestJobLeaseExpiryAndCancellation(t *testing.T) {
 	}
 }
 
+func TestJobLeaseBoundaryOwnedAtExpiryInstant(t *testing.T) {
+	job, _ := NewJob("plan", "cluster", 3, dispatchNow)
+	leased, _ := job.Lease("worker", dispatchNow, time.Minute)
+	expiry := dispatchNow.Add(time.Minute)
+	if !clock.LeaseOwnedAt(expiry, *leased.LeaseUntil) {
+		t.Fatal("holder should still own lease at the expiry instant")
+	}
+	if !clock.LeaseOwnedAt(expiry.Add(-time.Nanosecond), *leased.LeaseUntil) {
+		t.Fatal("holder should own lease just before expiry")
+	}
+	if clock.LeaseOwnedAt(expiry.Add(time.Nanosecond), *leased.LeaseUntil) {
+		t.Fatal("lease should be released only strictly after expiry")
+	}
+	if leased.Claimable(expiry) {
+		t.Fatal("lease owned at expiry instant must not be reclaimable by another worker")
+	}
+	if !leased.Claimable(expiry.Add(time.Nanosecond)) {
+		t.Fatal("lease must become reclaimable strictly after expiry")
+	}
+	succeeded, err := leased.Succeed("worker", expiry)
+	if err != nil {
+		t.Fatalf("completion at expiry instant should be allowed: %v", err)
+	}
+	if succeeded.Status != JobSucceeded {
+		t.Fatalf("status=%s", succeeded.Status)
+	}
+	if _, err = leased.Renew("worker", expiry, time.Minute); err != nil {
+		t.Fatalf("renewal at expiry instant should be allowed: %v", err)
+	}
+	if _, err = leased.Renew("worker", expiry.Add(time.Nanosecond), time.Minute); fault.Code(err) != "lease_expired" {
+		t.Fatalf("renewal strictly after expiry should fail: %v", err)
+	}
+}
+
 func TestBackoffCapsAndJobSummary(t *testing.T) {
 	if got := Backoff(time.Second, 1); got != time.Second {
 		t.Fatalf("first=%v", got)

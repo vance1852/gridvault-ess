@@ -116,10 +116,6 @@ func insertReservation(q Querier, ctx context.Context, r dispatch.Reservation) e
 	return translate("sqlite.insertReservation", err)
 }
 func (d *DB) ReservationsByPlan(ctx context.Context, planID string) ([]dispatch.Reservation, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	rows, err := d.sql.QueryContext(ctx, `SELECT id,plan_id,cluster_id,reserved_kw,starts_at,ends_at,status,created_at,updated_at FROM capacity_reservations WHERE plan_id=? ORDER BY cluster_id`, planID)
 	if err != nil {
 		return nil, translate("sqlite.ReservationsByPlan", err)

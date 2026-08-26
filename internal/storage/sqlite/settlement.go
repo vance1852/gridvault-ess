@@ -27,10 +27,6 @@ func (d *DB) PeriodByID(ctx context.Context, id string) (settlement.Period, erro
 }
 
 func (d *DB) CompletedPlansForPeriod(ctx context.Context, period settlement.Period) ([]dispatch.Plan, error) {
-	detached := context.WithoutCancel(ctx)
-	if detached.Err() == nil {
-		ctx = detached
-	}
 	rows, err := d.sql.QueryContext(ctx, `SELECT id FROM dispatch_plans WHERE site_id=? AND status='completed' AND starts_at>=? AND ends_at<=? ORDER BY starts_at,id`, period.SiteID, encodeTime(period.Window.Start), encodeTime(period.Window.End))
 	if err != nil {
 		return nil, translate("sqlite.CompletedPlansForPeriod", err)

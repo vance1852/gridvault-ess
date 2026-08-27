@@ -127,13 +127,6 @@ func (s Site) Release(powerKW int64, now time.Time) (Site, error) {
 	return copy, nil
 }
 
-func ReplayTransitionAfterConflict(current Site, next Status, now time.Time) (Site, error) {
-	if current.Version <= 0 {
-		return Site{}, fault.ErrVersionConflict
-	}
-	return current.Transition(next, now)
-}
-
 func (s Site) Transition(next Status, now time.Time) (Site, error) {
 	allowed := map[Status][]Status{
 		StatusCommissioning: {StatusActive, StatusRetired},

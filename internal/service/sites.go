@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/vance1852/gridvault-ess/internal/audit"
 	"github.com/vance1852/gridvault-ess/internal/clock"
@@ -62,21 +61,14 @@ func (s *SiteService) Transition(ctx context.Context, p Principal, id string, ne
 	if err != nil {
 		return site.Site{}, err
 	}
+	// Surface version conflicts instead of replaying the transition against the
+	// latest state. The optimistic lock confirms that the operator reviewed the
+	// state being changed; a concurrent modification (e.g. another operator
+	// pausing the site) invalidates that confirmation, so the caller must re-read
+	// the current state and resubmit rather than have the stale command applied
+	// automatically.
 	if err = s.store.UpdateSite(ctx, changed, expected); err != nil {
-		if !errors.Is(err, fault.ErrVersionConflict) {
-			return site.Site{}, err
-		}
-		current, loadErr := s.store.SiteByID(ctx, id)
-		if loadErr != nil {
-			return site.Site{}, loadErr
-		}
-		changed, err = site.ReplayTransitionAfterConflict(current, next, s.clock.Now())
-		if err != nil {
-			return site.Site{}, err
-		}
-		if err = s.store.UpdateSite(ctx, changed, current.Version); err != nil {
-			return site.Site{}, err
-		}
+		return site.Site{}, err
 	}
 	event, _ := audit.NewEvent(p.User.ID, requestID(request), "site", id, "transition", "success", map[string]any{"from": entity.Status, "to": changed.Status}, s.clock.Now())
 	if err = s.store.InsertAudit(ctx, event); err != nil {
